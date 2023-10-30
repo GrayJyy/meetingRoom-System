@@ -1,4 +1,5 @@
 import {
+  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
@@ -8,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Role } from './role.entity';
+import { md5 } from 'src/utils/utils';
 
 @Entity({ name: 'users' })
 export class User {
@@ -21,18 +23,23 @@ export class User {
   nick_name: string;
   @Column({ length: 50 })
   email: string;
-  @Column({ length: 100 })
+  @Column({ length: 100, default: '' })
   head_pic: string;
-  @Column({ length: 20 })
+  @Column({ length: 20, default: '' })
   phone_number: string;
-  @Column()
+  @Column({ default: false })
   is_frozen: boolean;
-  @Column()
+  @Column({ default: false })
   is_admin: boolean;
   @CreateDateColumn()
   create_time: Date;
   @UpdateDateColumn()
   update_time: Date;
+
+  @BeforeInsert()
+  encryptPwd() {
+    this.password = md5(this.password);
+  }
 
   @ManyToMany(() => Role)
   @JoinTable({
