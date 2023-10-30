@@ -13,6 +13,7 @@ import { RedisService } from 'src/redis/redis.service';
 import { EmailService } from 'src/email/email.service';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
+import { LoginUserDto } from './dto/login-user.dto';
 
 @Injectable()
 export class UserService {
@@ -119,5 +120,9 @@ export class UserService {
       this.logger.error(error, UserService);
       return '发送失败';
     }
+  }
+
+  async login(loginUserDto: LoginUserDto) {
+    console.log(loginUserDto);
   }
 }
