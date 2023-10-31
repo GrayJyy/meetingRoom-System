@@ -25,6 +25,8 @@ export class PermissionGuard implements CanActivate {
     );
     if (!requirePermission) return true;
     const request: Request = context.switchToHttp().getRequest();
+    const authorization = request.headers?.authorization;
+    if (!authorization) throw new UnauthorizedException('用户未登录');
     const permissions = request.user.permissions;
     if (
       !requirePermission.every((cur) => permissions.some((i) => i.code === cur))

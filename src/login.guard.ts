@@ -40,7 +40,7 @@ export class LoginGuard implements CanActivate {
     ]);
     if (!requireLogin) return true;
     const request: Request = context.switchToHttp().getRequest();
-    const authorization = request.headers.authorization;
+    const authorization = request.headers?.authorization;
     if (!authorization) throw new UnauthorizedException('用户未登录');
     try {
       const token = authorization.split(' ')[1];
