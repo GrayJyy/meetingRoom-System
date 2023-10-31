@@ -198,7 +198,8 @@ export class UserService {
     const _permissions = roles.reduce((prev, { permissions }) => {
       permissions.forEach(
         (permission) =>
-          prev.indexOf(permission) === -1 && prev.push(permission),
+          prev.every((i) => i?.code !== permission.code) &&
+          prev.push(permission),
       );
       return prev;
     }, []);

@@ -11,7 +11,7 @@ import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { Permission } from './user/entities/permission.entity';
 
-interface JwtUserData {
+export interface JwtUserData {
   userId: number;
   username: string;
   roles: string[];
