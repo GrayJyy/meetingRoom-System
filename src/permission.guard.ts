@@ -27,7 +27,7 @@ export class PermissionGuard implements CanActivate {
     const request: Request = context.switchToHttp().getRequest();
     const permissions = request.user.permissions;
     if (
-      requirePermission.every((cur) => !permissions.some((i) => i.code === cur))
+      requirePermission.some((cur) => !permissions.some((i) => i.code === cur))
     ) {
       throw new UnauthorizedException('您没有访问该接口的权限');
     }
