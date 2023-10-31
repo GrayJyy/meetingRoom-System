@@ -10,6 +10,7 @@ import { Permission } from './user/entities/permission.entity';
 import { RedisModule } from './redis/redis.module';
 import { EmailModule } from './email/email.module';
 import { UserModule } from './user/user.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -29,6 +30,16 @@ import { UserModule } from './user/user.module';
           port: configService.get('application.db.port'),
           database: configService.get('application.db.database'),
           entities: [User, Role, Permission],
+        };
+      },
+    }),
+    JwtModule.registerAsync({
+      global: true,
+      inject: [ConfigService],
+      async useFactory(configService: ConfigService) {
+        return {
+          secret: configService.get('application.jwt.secret'),
+          signOptions: { expiresIn: '30m' },
         };
       },
     }),

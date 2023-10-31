@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   Logger,
@@ -9,11 +11,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { RedisService } from 'src/redis/redis.service';
-// import { md5 } from 'src/utils/utils';
 import { EmailService } from 'src/email/email.service';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { LoginUserDto } from './dto/login-user.dto';
+import { md5 } from 'src/utils/utils';
+import { LoginUserVo } from './vo/login-user.vo';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UserService {
@@ -22,6 +27,10 @@ export class UserService {
   @Inject(RedisService)
   private readonly redisService: RedisService;
   private readonly logger = new Logger();
+  @Inject(JwtService)
+  private readonly jwtService: JwtService;
+  @Inject(ConfigService)
+  private readonly configService: ConfigService;
 
   @InjectRepository(User)
   private readonly userRepository: Repository<User>;
@@ -122,7 +131,92 @@ export class UserService {
     }
   }
 
-  async login(loginUserDto: LoginUserDto) {
-    console.log(loginUserDto);
+  async login({ username, password }: LoginUserDto, isAdmin: boolean = false) {
+    const _foundedUser = await this.userRepository.findOne({
+      where: { username, is_admin: isAdmin },
+      relations: ['roles', 'roles.permissions'],
+    });
+    if (!_foundedUser)
+      throw new HttpException('用户不存在', HttpStatus.BAD_REQUEST);
+
+    if (_foundedUser.password !== md5(password))
+      throw new HttpException('密码错误', HttpStatus.BAD_REQUEST);
+
+    return this.generateUserVo(_foundedUser);
+  }
+
+  jwtSign(vo: LoginUserVo) {
+    const { userInfo } = vo;
+    vo.accessToken = this.jwtService.sign(
+      {
+        id: userInfo.id,
+        username: userInfo.username,
+        roles: userInfo.roles,
+        permissions: userInfo.permissions,
+      },
+      {
+        expiresIn:
+          this.configService.get('application.jwt.access_expires') || '30m',
+      },
+    );
+
+    vo.refreshToken = this.jwtService.sign(
+      {
+        id: userInfo.id,
+      },
+      {
+        expiresIn:
+          this.configService.get('application.jwt.refresh_expires') || '7d',
+      },
+    );
+    return vo;
+  }
+
+  async findById(id: number, isAdmin: boolean = false) {
+    const _foundedUser = await this.userRepository.findOne({
+      where: { id, is_admin: isAdmin },
+      relations: ['roles', 'roles.permissions'],
+    });
+
+    return this.generateUserVo(_foundedUser);
+  }
+
+  generateUserVo(foundedUser: User) {
+    const {
+      id,
+      nick_name,
+      username,
+      email,
+      phone_number,
+      head_pic,
+      create_time,
+      is_admin,
+      is_frozen,
+      roles,
+    } = foundedUser;
+    const _roles = roles.map((i) => i.name);
+    const _permissions = roles.reduce((prev, { permissions }) => {
+      permissions.forEach(
+        (permission) =>
+          prev.indexOf(permission) === -1 && prev.push(permission),
+      );
+      return prev;
+    }, []);
+
+    const _vo = new LoginUserVo();
+    _vo.userInfo = {
+      id,
+      username,
+      nickName: nick_name,
+      email,
+      phoneNumber: phone_number,
+      headPic: head_pic,
+      isAdmin: is_admin,
+      isFrozen: is_frozen,
+      roles: _roles,
+      permissions: _permissions,
+      createTime: create_time,
+    };
+    return _vo;
   }
 }
