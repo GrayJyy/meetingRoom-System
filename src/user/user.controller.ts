@@ -104,4 +104,9 @@ export class UserController {
   async updatePasswordCaptcha(@Query('address') address: string) {
     await this.userService.captcha(address, MailType.修改密码);
   }
+
+  @Get('freeze')
+  async freeze(@Query('id') id: number) {
+    await this.userService.freezeUserById(id);
+  }
 }

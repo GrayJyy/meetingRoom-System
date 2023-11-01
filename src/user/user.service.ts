@@ -266,4 +266,8 @@ export class UserService {
       return '密码修改失败';
     }
   }
+
+  async freezeUserById(id: number) {
+    await this.userRepository.update(id, { is_frozen: true });
+  }
 }
