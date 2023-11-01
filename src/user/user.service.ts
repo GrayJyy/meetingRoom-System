@@ -149,7 +149,7 @@ export class UserService {
     const { userInfo } = vo;
     vo.accessToken = this.jwtService.sign(
       {
-        id: userInfo.id,
+        userId: userInfo.id,
         username: userInfo.username,
         roles: userInfo.roles,
         permissions: userInfo.permissions,
@@ -162,7 +162,7 @@ export class UserService {
 
     vo.refreshToken = this.jwtService.sign(
       {
-        id: userInfo.id,
+        userId: userInfo.id,
       },
       {
         expiresIn:
@@ -219,5 +219,14 @@ export class UserService {
       createTime: create_time,
     };
     return _vo;
+  }
+
+  async findUserDetailById(userId: number) {
+    console.log('userId', userId);
+
+    const _foundedUser = await this.userRepository.findOneBy({
+      id: userId,
+    });
+    return _foundedUser;
   }
 }
