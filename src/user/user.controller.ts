@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   Inject,
   Post,
@@ -16,6 +17,7 @@ import { toVo } from 'src/utils/2Vo';
 import { UserDetailVo } from './vo/user-info.vo';
 import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
 import { MailType } from 'src/constant';
+import { generateParseIntPipe } from 'src/utils/utils';
 
 @Controller('user')
 export class UserController {
@@ -108,5 +110,20 @@ export class UserController {
   @Get('freeze')
   async freeze(@Query('id') id: number) {
     await this.userService.freezeUserById(id);
+  }
+
+  @Get('list')
+  async list(
+    @Query('pageNo', new DefaultValuePipe(1), generateParseIntPipe('pageNo'))
+    pageNo: number,
+    @Query(
+      'pageSize',
+      new DefaultValuePipe(2),
+      generateParseIntPipe('pageSize'),
+    )
+    pageSize: number,
+    @Query('username') username: string,
+  ) {
+    return this.userService.findUsersByPage(pageNo, pageSize, username);
   }
 }

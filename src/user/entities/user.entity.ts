@@ -9,7 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Role } from './role.entity';
-import { md5 } from 'src/utils/utils';
+import { md5 } from 'src/utils/md5';
 
 @Entity({ name: 'users' })
 export class User {

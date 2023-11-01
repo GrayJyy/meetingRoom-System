@@ -9,13 +9,13 @@ import {
 import { RegisterUserDto } from './dto/register-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { RedisService } from 'src/redis/redis.service';
 import { EmailService } from 'src/email/email.service';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { LoginUserDto } from './dto/login-user.dto';
-import { md5 } from 'src/utils/utils';
+import { md5 } from 'src/utils/md5';
 import { LoginUserVo } from './vo/login-user.vo';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -269,5 +269,32 @@ export class UserService {
 
   async freezeUserById(id: number) {
     await this.userRepository.update(id, { is_frozen: true });
+  }
+
+  async findUsersByPage(pageNo: number, pageSize: number, username?: string) {
+    const condition: Record<string, any> = {};
+    if (username) {
+      condition.username = Like(`%${username}%`);
+    }
+    const [users, total] = await this.userRepository.findAndCount({
+      select: [
+        'id',
+        'username',
+        'nick_name',
+        'phone_number',
+        'email',
+        'is_admin',
+        'is_frozen',
+        'head_pic',
+        'create_time',
+      ],
+      skip: (pageNo - 1) * pageSize,
+      take: pageSize,
+      where: condition,
+    });
+    return {
+      record: users,
+      total,
+    };
   }
 }
