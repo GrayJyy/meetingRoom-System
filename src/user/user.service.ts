@@ -22,6 +22,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
 import { JwtUserData } from 'src/login.guard';
 import { MailType } from 'src/constant';
+import { UnLoginException } from 'src/unlogin.filter';
 
 @Injectable()
 export class UserService {
@@ -151,8 +152,8 @@ export class UserService {
       where: { username, is_admin: isAdmin },
       relations: ['roles', 'roles.permissions'],
     });
-    if (!_foundedUser)
-      throw new HttpException('用户不存在', HttpStatus.BAD_REQUEST);
+    if (!_foundedUser) throw new UnLoginException();
+    // throw new HttpException('用户不存在', HttpStatus.BAD_REQUEST);
 
     if (_foundedUser.password !== md5(password))
       throw new HttpException('密码错误', HttpStatus.BAD_REQUEST);
