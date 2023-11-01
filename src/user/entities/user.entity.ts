@@ -40,7 +40,6 @@ export class User {
   encryptPwd() {
     this.password = md5(this.password);
   }
-
   @ManyToMany(() => Role)
   @JoinTable({
     name: 'user_role',

@@ -14,6 +14,8 @@ import { JwtService } from '@nestjs/jwt';
 import { RequireLogin, UserInfo } from 'src/utils/custom.decorator';
 import { toVo } from 'src/utils/2Vo';
 import { UserDetailVo } from './vo/user-info.vo';
+import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
+import { MailType } from 'src/constant';
 
 @Controller('user')
 export class UserController {
@@ -34,7 +36,7 @@ export class UserController {
 
   @Get('captcha')
   async captcha(@Query('address') to: RegisterUserDto['email']) {
-    return await this.userService.captcha(to);
+    return await this.userService.captcha(to, MailType.注册);
   }
 
   @Post('login')
@@ -86,5 +88,20 @@ export class UserController {
   async info(@UserInfo('userId') userId: number) {
     const _info = await this.userService.findUserDetailById(userId);
     return toVo(_info, new UserDetailVo());
+  }
+
+  @Post(['update_password', 'admin/update_password'])
+  @RequireLogin()
+  async updatePassword(
+    @UserInfo('userId') userId: number,
+    @Body() passwordDto: UpdateUserPasswordDto,
+  ) {
+    return await this.userService.updatePassword(userId, passwordDto);
+  }
+
+  @Get('update_password/captcha')
+  @RequireLogin()
+  async updatePasswordCaptcha(@Query('address') address: string) {
+    await this.userService.captcha(address, MailType.修改密码);
   }
 }

@@ -19,6 +19,9 @@ import { md5 } from 'src/utils/utils';
 import { LoginUserVo } from './vo/login-user.vo';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { UpdateUserPasswordDto } from './dto/update-user-password.dto';
+import { JwtUserData } from 'src/login.guard';
+import { MailType } from 'src/constant';
 
 @Injectable()
 export class UserService {
@@ -111,18 +114,30 @@ export class UserService {
     }
   }
 
-  async captcha(to: RegisterUserDto['email']) {
+  async captcha(to: RegisterUserDto['email'], type: MailType) {
     const _foundedUser = await this.userRepository.findOneBy({
       email: to,
     });
-    if (_foundedUser) throw new BadRequestException('用户已存在');
+    if (_foundedUser && type === MailType.注册)
+      throw new BadRequestException('用户已存在');
+    if (!_foundedUser && type === MailType.修改密码)
+      throw new BadRequestException('用户不存在');
     const _captcha = Math.random().toString().slice(2, 8);
-    await this.redisService.set(`captcha_${to}`, _captcha, 5 * 60);
+    if (type === MailType.注册) {
+      await this.redisService.set(`captcha_${to}`, _captcha, 5 * 60);
+    } else if (type === MailType.修改密码) {
+      await this.redisService.set(
+        `update_password_captcha_${to}`,
+        _captcha,
+        5 * 60,
+      );
+    }
+
     try {
       await this.emailService.sendMail({
         to,
-        subject: '注册验证码',
-        html: `<p>你的注册验证码是: ${_captcha}</p>`,
+        subject: '验证码',
+        html: `<p>你的验证码是: ${_captcha}</p>`,
       });
       return '发送成功';
     } catch (error) {
@@ -221,10 +236,33 @@ export class UserService {
     return _vo;
   }
 
-  async findUserDetailById(userId: number) {
+  async findUserDetailById(userId: JwtUserData['userId']) {
     const _foundedUser = await this.userRepository.findOneBy({
       id: userId,
     });
     return _foundedUser;
+  }
+
+  async updatePassword(
+    userId: JwtUserData['userId'],
+    { email, password, captcha }: UpdateUserPasswordDto,
+  ) {
+    const _captcha = await this.redisService.get(
+      `update_password_captcha_${email}`,
+    );
+    if (!_captcha)
+      throw new HttpException('验证码已失效', HttpStatus.BAD_REQUEST);
+    if (captcha !== _captcha)
+      throw new HttpException('验证码不正确', HttpStatus.BAD_REQUEST);
+    // const _foundedUser = await this.findUserDetailById(userId);
+    // _foundedUser.password = password;
+    try {
+      await this.userRepository.update(userId, { password: md5(password) }); // 并没有进入BeforeInsert
+      // await this.userRepository.save(_foundedUser);
+      return '密码修改成功';
+    } catch (e) {
+      this.logger.error(e, UserService);
+      return '密码修改失败';
+    }
   }
 }
