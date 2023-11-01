@@ -12,6 +12,8 @@ import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { RequireLogin, UserInfo } from 'src/utils/custom.decorator';
+import { toVo } from 'src/utils/2Vo';
+import { UserDetailVo } from './vo/user-info.vo';
 
 @Controller('user')
 export class UserController {
@@ -82,8 +84,7 @@ export class UserController {
   @Get('info')
   @RequireLogin()
   async info(@UserInfo('userId') userId: number) {
-    console.log(userId);
-
-    return await this.userService.findUserDetailById(userId);
+    const _info = await this.userService.findUserDetailById(userId);
+    return toVo(_info, new UserDetailVo());
   }
 }

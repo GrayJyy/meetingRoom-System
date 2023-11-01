@@ -222,8 +222,6 @@ export class UserService {
   }
 
   async findUserDetailById(userId: number) {
-    console.log('userId', userId);
-
     const _foundedUser = await this.userRepository.findOneBy({
       id: userId,
     });

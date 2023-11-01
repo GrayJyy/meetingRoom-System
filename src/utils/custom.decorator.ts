@@ -14,8 +14,6 @@ export const UserInfo = createParamDecorator(
   (key: keyof JwtUserData, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest<Request>();
     if (!request?.user) return null;
-    console.log('...............', request.user);
-
     return key ? request.user[key] : request.user;
   },
 );
